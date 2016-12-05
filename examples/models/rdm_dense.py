@@ -38,6 +38,7 @@ Cout[:,EXC] = 1
 #-----------------------------------------------------------------------------------------
 
 cohs        = [1, 2, 4, 8, 16]
+#cohs        = [1, 4, 16]
 in_outs     = [1, -1]
 nconditions = len(cohs)*len(in_outs)
 pcatch      = 1/(nconditions + 1)
@@ -108,7 +109,7 @@ def generate_trial(rng, dt, params):
             choice = 1
 
         # Trial info
-        trial['info'] = {'coh': coh, 'in_out': in_out, 'choice': choice}
+        trial['info'] = {'coh': coh, 'in_out': in_out, 'choice': choice, 'ant_lvl':params['ant_lvl']}
 
     #-------------------------------------------------------------------------------------
     # Inputs

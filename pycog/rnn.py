@@ -374,6 +374,21 @@ class RNN(object):
 
         # Record initial conditions
         self.r[0] = r_t
+        
+        ##################################################################################
+        #scaling the Wrec inhibitory units
+        if (self.p['ei'] is not None) and (0 == params['ant_applied']):
+            #Nexc = len(np.where(self.p['ei'] > 0)[0])
+            Ninh = len(np.where(self.p['ei'] < 0)[0])
+            #exc, = np.where(self.p['ei'] > 0)
+            inh, = np.where(self.p['ei'] < 0)
+            for i in np.arange(N):
+                self.Wrec[i,inh] = self.Wrec[i,inh]*(1-params['ant_lvl'])
+                
+            RNN.plot_connection_matrix2(self.Wrec, params['ant_lvl'])
+
+
+        ##################################################################################
 
         # Integrate
         if np.isscalar(alpha):
@@ -500,6 +515,7 @@ class RNN(object):
         # Format axes
         #---------------------------------------------------------------------------------
 
+
         plot.set_thickness(0.2)
         plot.set_tick_params(0, labelsize, 0)
 
@@ -544,7 +560,79 @@ class RNN(object):
         plot.imshow(im, interpolation='nearest', aspect='auto')
 
     #/////////////////////////////////////////////////////////////////////////////////////
+  
+    @staticmethod
+    def plot_connection_matrix2(W, antagonist_level, smap_exc=None, smap_inh=None, labelsize=5):
+        """
+        Plot a connection matrix, using separate colors for excitatory and inhibitory
+        units.
 
+        plot : pycog.figtools.Subplot
+        W    : 2D numpy.ndarray
+        smap_exc, smap_inh : matplotlib.cm.ScalarMappable
+
+        """
+        
+        try:
+            from .figtools import Figure, gradient, mpl
+        except ImportError:
+            print("[ {}.RNN.plot_costs ] Couldn't import pycog.figtools.".format(THIS))
+            sys.exit(1)
+
+        #---------------------------------------------------------------------------------
+        # Format axes
+        #---------------------------------------------------------------------------------
+        fig  = Figure()
+        plot = fig.add()
+
+        plot.set_thickness(0.2)
+        plot.set_tick_params(0, labelsize, 0)
+
+        plot.xaxis.tick_top()
+        plot.yaxis.tick_right()
+
+        plot.xticks()
+        plot.yticks()
+
+        #---------------------------------------------------------------------------------
+        # Display connection matrix
+        #---------------------------------------------------------------------------------
+
+        white = 'w'
+        blue  = Figure.colors('strongblue')
+        red   = Figure.colors('strongred')
+
+        # Create colormaps if necessary
+        if smap_exc is None:
+            exc      = np.ravel(W[np.where(W > 0)])
+            cmap_exc = gradient(white, blue)
+            norm_exc = mpl.colors.Normalize(vmin=0, vmax=np.max(exc))
+            smap_exc = mpl.cm.ScalarMappable(norm_exc, cmap_exc)
+        if smap_inh is None:
+            inh = -np.ravel(W[np.where(W < 0)])
+            if len(inh) > 0:
+                cmap_inh = gradient(white, red)
+                vmax=np.max(inh)
+                norm_inh = mpl.colors.Normalize(vmin=0, vmax = 1.416)
+                smap_inh = mpl.cm.ScalarMappable(norm_inh, cmap_inh)
+
+        if W.ndim == 1:
+            W = W[:,np.newaxis]
+
+        im = np.ones(W.shape + (3,))
+        for i in xrange(W.shape[0]):
+            for j in xrange(W.shape[1]):
+                if W[i,j] > 0:
+                    im[i,j] = smap_exc.to_rgba(W[i,j])[:3]
+                elif W[i,j] < 0:
+                    im[i,j] = smap_inh.to_rgba(-W[i,j])[:3]
+
+        plot.imshow(im, interpolation='nearest', aspect='auto')
+        figspath = '/home/gemoore/Documents/pycog/paper/figs/'
+        plt_title = 'WrecAntagonistLevel='+str(antagonist_level)
+        fig.save(path=figspath,name=plt_title)
+        fig.close()
+    #/////////////////////////////////////////////////////////////////////////////////////
     def plot_structure(self, sortby=None):
         """
         Create a summary figure for the network's structure.

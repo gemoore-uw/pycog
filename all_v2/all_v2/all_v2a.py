@@ -1,0 +1,155 @@
+#! /usr/bin/env python
+"""
+Reproduce every figure in the paper from scratch.
+
+Notes
+-----
+
+* Running this script in its entirety will take some time.
+
+* We run a fair number of trials to get pretty psychometric curves, and this is done
+  in one big chunk of memory. You may need to change this to run more trials, depending
+  on your setup.
+
+* Training converged for all the seeds we tried but we picked the ones that produced
+  the prettiest plots for the paper -- we hope that's understandable!
+
+"""
+from __future__ import division
+
+import argparse
+import datetime
+import os
+import subprocess
+import sys
+from   os.path import join
+
+import numpy as np
+
+from pycog.utils import get_here, mkdir_p
+
+#=========================================================================================
+# Command line
+#=========================================================================================
+
+p = argparse.ArgumentParser()
+p.add_argument('-g', '--gpus', nargs='?', type=int, const=1, default=0)
+p.add_argument('-s', '--simulate', action='store_true', default=False)
+p.add_argument('args', nargs='*')
+a = p.parse_args()
+
+# GPUs
+gpus = a.gpus
+
+simulate = a.simulate
+args     = a.args
+if not args:
+    args = [
+        'rdm',                         # Fig. 2
+        'structure',                   # Fig. 3
+        'mante',                       # Fig. 4
+        'mante_areas', 'connectivity', # Fig. 5
+        'multisensory',                # Fig. 6
+        'romo',                        # Fig. 7
+        'lee',                         # Fig. 8
+        'performance'                  # Fig. 9
+        ]
+
+#=========================================================================================
+# Shared steps
+#=========================================================================================
+
+here          = get_here(__file__)
+#base          = os.path.abspath(join(here, os.pardir))
+base          = '/home/gemoore/Documents/pycog'
+examplespath  = join(base, 'examples')
+modelspath    = join(examplespath, 'models')
+analysispath  = join(examplespath, 'analysis')
+paperpath     = join(base, 'paper')
+paperfigspath = join(paperpath, 'figs')
+timespath     = join(paperpath, 'times')
+
+# Make paths
+mkdir_p(paperfigspath)
+mkdir_p(timespath)
+
+def call(s):
+    if simulate:
+        print(3*' ' + s)
+    else:
+        rv = subprocess.call(s.split())
+        if rv != 0:
+            sys.stdout.flush()
+            print("Something went wrong (return code {}).".format(rv)
+                  + " We're probably out of memory.")
+            sys.exit(1)
+
+def clean(model):
+    call("python {} {} clean"
+         .format(join(examplespath, 'do.py'), join(modelspath, model)))
+
+def train(model, seed=None):
+    if seed is None:
+        seed = ''
+    else:
+        seed = ' -s {}'.format(seed)
+
+    tstart = datetime.datetime.now()
+    call("python {} {} train{} -g{}"
+         .format(join(examplespath, 'do.py'), join(modelspath, model), seed, gpus))
+    tend = datetime.datetime.now()
+
+    # Save training time
+    totalmins = int((tend - tstart).total_seconds()/60)
+    timefile = join(timespath, model + '_time.txt')
+    np.savetxt(timefile, [totalmins], fmt='%d')
+
+def train_seeds(model, start_seed=1, ntrain=5):
+    for seed in xrange(start_seed, start_seed+ntrain):
+        suffix = '_s{}'.format(seed)
+        s = ' --seed {} --suffix {}'.format(seed, suffix)
+
+        tstart = datetime.datetime.now()
+        call("python {} {} clean{}"
+             .format(join(examplespath, 'do.py'), join(modelspath, model), s))
+        call("python {} {} train{} -g{}"
+             .format(join(examplespath, 'do.py'), join(modelspath, model), s, gpus))
+        tend = datetime.datetime.now()
+
+        # Save training time
+        totalmins = int((tend - tstart).total_seconds()/60)
+        timefile = join(timespath, model + suffix + '_time.txt')
+        np.savetxt(timefile, [totalmins], fmt='%d')
+
+def trials(model, ntrials, analysis=None, args=''):
+    if analysis is None:
+        analysis = model
+
+    call("python {} {} run {} trials {} {}".format(join(examplespath, 'do.py'),
+                                                   join(modelspath, model),
+                                                   join(analysispath, analysis),
+                                                   ntrials, args))
+
+def do_action(model, action, analysis=None):
+    if analysis is None:
+        analysis = model
+
+    call("python {} {} run {} {}".format(join(examplespath, 'do.py'),
+                                         join(modelspath, model),
+                                         join(analysispath, analysis),
+                                         action))
+
+def figure(fig):
+    call('python ' + join(paperpath, fig + '.py'))
+
+#=========================================================================================
+
+if 'structure' in args:
+    print("=> Perceptual decision-making task (structure)")
+    models = ['rdm_nodale', 'rdm_dense', 'rdm_fixed']
+    #models = ['rdm_dense']
+    seeds  = [None, 101, 1001] # Pick out the prettiest
+    #seeds = [101]
+    for m, seed in zip(models, seeds):
+        clean(m)
+        train(m, seed=seed)

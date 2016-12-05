@@ -56,7 +56,8 @@ def safe_divide(x):
 def is_active(r):
     return np.std(r) > 0.1
 
-# Nice colors to represent coherences, from http://colorbrewer2.org/
+# Nice colors to represent coherences, from http://colorbrewer2.org/ 
+# These are used in Figure 2
 colors = {
         0:  '#c6dbef',
         1:  '#9ecae1',
@@ -112,11 +113,13 @@ def run_trials(p, args):
     rng = np.random.RandomState(p['seed'])
     rnn = RNN(p['savefile'], {'dt': p['dt']}, verbose=False)
 
+    
     # Trials
     w = len(str(ntrials))
     trials = []
     backspaces = 0
     try:
+        ant_applied = 0
         for i in xrange(ntrials):
             b = i % (m.nconditions + 1)
             if b == 0:
@@ -128,14 +131,19 @@ def run_trials(p, args):
                 k1, k2 = tasktools.unravel_index(b-1, (len(m.cohs), len(m.in_outs)))
                 coh    = m.cohs[k1]
                 in_out = m.in_outs[k2]
-
+            
+            if 1 == i:
+                ant_applied = 1
+                
             # Trial
             trial_func = m.generate_trial
             trial_args = {
                 'name':   'test',
                 'catch':  False,
                 'coh':    coh,
-                'in_out': in_out
+                'in_out': in_out,
+                'ant_lvl': p['ant_lvl'],
+                'ant_applied': ant_applied
                 }
             info = rnn.run(inputs=(trial_func, trial_args), rng=rng)
 
@@ -145,8 +153,10 @@ def run_trials(p, args):
             else:
                 s = ("Trial {:>{}}/{}: {:>+3}"
                      .format(i+1, w, ntrials, info['in_out']*info['coh']))
-            sys.stdout.write(backspaces*'\b' + s)
-            sys.stdout.flush()
+            if(np.remainder(i,100) == 0):
+                sys.stdout.write('\n' + s)
+                #sys.stdout.write(backspaces*'\b' + s)
+                sys.stdout.flush()
             backspaces = len(s)
 
             # Save
@@ -176,7 +186,7 @@ def run_trials(p, args):
 
 #=========================================================================================
 
-def psychometric_function(trialsfile, plot=None, threshold=False, **kwargs):
+def psychometric_function(trialsfile,plot=None, threshold=False, **kwargs):
     """
     Compute and plot the sychometric function.
 
@@ -212,6 +222,8 @@ def psychometric_function(trialsfile, plot=None, threshold=False, **kwargs):
             ncorrect += 1
 
     # Report overall performance
+    if info['ant_lvl'] is not None:
+        print 'Antagonist Level =',info['ant_lvl']
     pcorrect = 100*ncorrect/ntot
     print("[ {}.psychometric_function ] {}/{} = {:.2f}% correct."
           .format(THIS, ncorrect, ntot, pcorrect))
@@ -226,7 +238,8 @@ def psychometric_function(trialsfile, plot=None, threshold=False, **kwargs):
     #-------------------------------------------------------------------------------------
     # Plot
     #-------------------------------------------------------------------------------------
-
+    fig  = Figure()
+    plot = fig.add()
     if plot is not None:
         # Data
         prop = {'ms':     kwargs.get('ms',  6),
@@ -253,6 +266,10 @@ def psychometric_function(trialsfile, plot=None, threshold=False, **kwargs):
         plot.ylim(0, 100)
         plot.yticks([0, 25, 50, 75, 100])
         plot.lim('x', scaled_cohs)
+        plt_title = 'PercentageCorrect=' + str(pcorrect) + '_AntagonistLevel=' + str(info['ant_lvl'])
+        figspath = '/home/gemoore/Documents/pycog/paper/figs/'
+        fig.save(path=figspath,name=plt_title)
+        fig.close()
 
 #=========================================================================================
 

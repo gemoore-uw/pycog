@@ -31,7 +31,8 @@ p.add_argument('--suffix', type=str, default='')
 p.add_argument('-p', '--ppn', type=int, default=1)
 p.add_argument('-g', '--gpus', nargs='?', type=int, const=1, default=0)
 p.add_argument('--dt', type=float, default=0.5)
-p.add_argument('--dt_save', type=float, default=0.5)
+p.add_argument('--dt_save', type=float, default=100)
+p.add_argument('--ant_lvl', type=float, default=1.0)
 a = p.parse_args()
 
 # Model file
@@ -47,6 +48,7 @@ ppn     = a.ppn
 gpus    = a.gpus
 dt      = a.dt
 dt_save = a.dt_save
+ant_lvl = a.ant_lvl
 
 print("MODELFILE: " + str(modelfile))
 print("ACTION:    " + str(action))
@@ -307,7 +309,8 @@ elif action == 'run':
         'figspath':   figspath,
         'trialspath': trialspath,
         'dt':         dt,
-        'dt_save':    dt_save
+        'dt_save':    dt_save,
+        'ant_lvl':    ant_lvl
         }
     r.do(action, args, params)
 

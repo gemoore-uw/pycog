@@ -1,0 +1,34 @@
+-- VERSION_4
+-- START DISKCACHE
+/home/gemoore/Documents/pycog/.metadata/.plugins/org.eclipse.core.resources/.projects/all_v2b/com.python.pydev.analysis/v2_indexcache
+all_v2.all_v2b|1480902042000|/home/gemoore/Documents/pycog/all_v2b/all_v2/all_v2b.py
+all_v2.__init__|1480799901000|/home/gemoore/Documents/pycog/all_v2b/all_v2/__init__.py
+-- END DISKCACHE
+-- START DICTIONARY
+1
+1=all_v2.all_v2b
+-- END DICTIONARY
+-- START TREE 1
+18
+a|1|a!11@
+ana|1|analysispath!11@
+arg|1|args!11@
+bas|1|base!11@
+cal|1|call!10@
+cle|1|clean!10@
+do_|1|do_action!10@
+exa|1|examplespath!11@
+fig|1|figure!10@
+gpu|1|gpus!11@
+her|1|here!11@
+mod|1|modelspath!11@
+p|1|p!11@
+pap|2|paperfigspath!11@paperpath!11@
+sim|1|simulate!11@
+tim|1|timespath!11@
+tra|2|train!10@train_seeds!10@
+tri|1|trials!10@
+-- END TREE
+-- START TREE 2
+0
+-- END TREE

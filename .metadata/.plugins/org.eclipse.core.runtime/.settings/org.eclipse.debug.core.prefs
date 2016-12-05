@@ -1,0 +1,2 @@
+eclipse.preferences.version=1
+prefWatchExpressions=<?xml version\="1.0" encoding\="UTF-8" standalone\="no"?>\n<watchExpressions>\n<expression enabled\="true" text\="self.Wrec[0,80\:99]"/>\n<expression enabled\="true" text\="params['ant_lvl']"/>\n<expression enabled\="true" text\="params['ant_applied']"/>\n<expression enabled\="true" text\="ant_lvl"/>\n<expression enabled\="true" text\="fig.show()"/>\n</watchExpressions>\n
